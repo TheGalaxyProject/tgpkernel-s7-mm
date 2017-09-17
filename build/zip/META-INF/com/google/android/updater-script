@@ -1,0 +1,185 @@
+# -------------------------------
+# TGPKERNEL AROMA INSTALLER v2.00
+# updater-script portion
+#
+# Created by djb77 from XDA
+#
+# DO NOT USE ANY PORTION OF THIS
+# CODE WITHOUT MY PERMISSION!!
+# -------------------------------
+
+ui_print("@Setting up");
+set_progress(0.0);
+
+# MOUNT PARTITIONS
+# ----------------
+ui_print("- Mounting Partitions");
+ifelse(is_mounted("/system"), unmount("/system"));
+ifelse(is_mounted("/data"), unmount("/data"));
+mount("ext4", "EMMC", "/dev/block/platform/155a0000.ufs/by-name/SYSTEM", "/system");
+mount("ext4", "EMMC", "/dev/block/platform/155a0000.ufs/by-name/USERDATA", "/data");
+
+# BACKUP CONFIG
+# -------------
+if file_getprop("/tmp/aroma/tgpkernel-backup.prop","install") == "1"
+then
+	ui_print("- Backing up Config");
+	run_program("/tmp/aroma/backup.sh");
+endif;
+
+# RESTORE CONFIG
+# --------------
+if file_getprop("/tmp/aroma/tgpkernel-restore.prop","install") == "1"
+then
+	ui_print("- Restoring Config");
+	run_program("/tmp/aroma/restore.sh");
+endif;
+
+# WIPE MAGISK / SUPERSU
+# ---------------------
+if file_getprop("/tmp/aroma/wipe.prop","install") == "1"
+then
+	ui_print("- Clearing old Magisk / SuperSU Installs");
+	run_program("/tmp/aroma/wipe.sh");
+endif;
+
+set_progress(0.10);
+
+# FLASH KERNEL
+# ------------
+if file_getprop("/tmp/aroma/g930x.prop","install") == "1"
+then
+	ui_print(" ");
+	ui_print("@Flashing TGPKernel for S7");
+	package_extract_file("g930x.img", "/dev/block/platform/155a0000.ufs/by-name/BOOT");
+endif;
+if file_getprop("/tmp/aroma/g935x.prop","install") == "1"
+then
+	ui_print(" ");
+	ui_print("@Flashing TGPKernel for S7 Edge");
+	package_extract_file("g935x.img", "/dev/block/platform/155a0000.ufs/by-name/BOOT");
+endif;
+
+set_progress(0.35);
+
+# INSTALL SYSTEM PATCHES
+# ----------------------
+ui_print("@Patching System");
+run_program("/tmp/aroma/mm_patch.sh");
+package_extract_dir("tgpkernel/system", "/system");
+delete("/system/etc/init.d/placeholder");
+ui_print(" ");
+
+set_progress(0.40);
+
+# INSTALL MTWEAKS
+# ---------------
+if file_getprop("/tmp/aroma/mtweaks.prop","install") == "1"
+then
+	ui_print("@Installing MTweaks App");
+	delete_recursive("/data/app/com.moro.mtweaks-*");
+	package_extract_dir("tgpkernel/apps/com.moro.mtweaks-1", "/data/app/com.moro.mtweaks-1");
+endif;
+
+set_progress(0.45);
+
+# INSTALL SPECTRUM FILES
+# ----------------------
+if file_getprop("/tmp/aroma/spectrum.prop","install") == "1"
+then
+	ui_print("@Installing Spectrum Profiles");
+	package_extract_dir("tgpkernel/spectrum", "/data/media/0/Spectrum");
+	set_perm_recursive(0, 0, 0777, 0777, "/data/media/0/Spectrum");
+	if file_getprop("/tmp/aroma/mtweaks.prop","install") == "0"
+	then
+		ui_print("@Installing Spectrum Control App");
+		delete_recursive("/data/app/org.frap129.spectrum-*");
+		package_extract_dir("tgpkernel/apps/org.frap129.spectrum-1", "/data/app/org.frap129.spectrum-1");
+	endif;
+endif;
+
+set_progress(0.49);
+
+# PERMISSIONS
+# -----------
+ui_print(" ");
+ui_print("@Setting System Permissions");
+set_metadata_recursive("/system/app/mcRegistry", "uid", 0, "gid", 0, "dmode", 0755, "fmode", 0644, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+set_metadata_recursive("/system/etc/init.d", "uid", 0, "gid", 2000, "dmode", 0755, "fmode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+set_metadata_recursive("/system/xbin", "uid", 0, "gid", 2000, "dmode", 0755, "fmode", 0755, "capabilities", 0x0, "selabel", "u:object_r:system_file:s0");
+
+set_progress(0.50);
+
+# RAMDISK PATCHES
+# ---------------
+if file_getprop("/tmp/aroma/patch.prop","install") == "1"
+then
+	ui_print(" ");
+	ui_print("@Patching Ramdisk");
+	package_extract_dir("tgpkernel/anykernel2", "/tmp/ak2");
+	set_perm_recursive(0, 0, 0777, 0777, "/tmp/ak2");
+	run_program("/sbin/busybox", "unzip", "/tmp/ak2/anykernel2.zip", "META-INF/com/google/android/*", "-d", "/tmp/ak2");
+	run_program("/sbin/sh", "/tmp/ak2/META-INF/com/google/android/update-binary", "dummy", "1", "/tmp/ak2/anykernel2.zip");
+	delete_recursive("/tmp/ak2");
+endif;
+
+set_progress(0.60);
+
+# INSTALL SUPERSU
+# ---------------
+if file_getprop("/tmp/aroma/supersu.prop","install") == "1"
+then
+	ui_print(" ");
+	ui_print("@Installing SuperSU");
+	package_extract_dir("tgpkernel/supersu", "/tmp/supersu");
+	set_perm_recursive(0, 0, 0777, 0777, "/tmp/supersu");
+	run_program("/sbin/busybox", "unzip", "/tmp/supersu/supersu.zip", "META-INF/com/google/android/*", "-d", "/tmp/supersu");
+	run_program("/sbin/sh", "/tmp/supersu/META-INF/com/google/android/update-binary", "dummy", "1", "/tmp/supersu/supersu.zip");
+	delete_recursive("/tmp/supersu");
+	run_program("/tmp/aroma/supersu.sh");
+endif;
+
+set_progress(0.70);
+
+# INSTALL MAGISK
+# --------------
+if file_getprop("/tmp/aroma/magisk.prop","install") == "1"
+then
+	ui_print(" ");
+	ui_print("@Installing Magisk");
+	package_extract_dir("tgpkernel/magisk", "/tmp/magisk");
+	set_perm_recursive(0, 0, 0777, 0777, "/tmp/magisk");
+	run_program("/sbin/busybox", "unzip", "/tmp/magisk/magisk.zip", "META-INF/com/google/android/*", "-d", "/tmp/magisk");
+	run_program("/sbin/sh", "/tmp/magisk/META-INF/com/google/android/update-binary", "dummy", "1", "/tmp/magisk/magisk.zip");
+	delete_recursive("/tmp/magisk");
+endif;
+
+set_progress(0.80);
+
+# INSTALL BUSYBOX
+# ---------------
+if file_getprop("/tmp/aroma/busybox.prop","install") == "1"
+then
+	ui_print(" ");
+	ui_print("@Installing Busybox");
+	package_extract_dir("tgpkernel/busybox", "/tmp/bb");
+	set_perm_recursive(0, 0, 0777, 0777, "/tmp/bb");
+	run_program("/sbin/busybox", "unzip", "/tmp/bb/busybox.zip", "META-INF/com/google/android/*", "-d", "/tmp/bb");
+	run_program("/sbin/busybox", "sh", "/tmp/bb/META-INF/com/google/android/update-binary", "dummy", "1", "/tmp/bb/busybox.zip");
+	delete_recursive("/tmp/bb");
+endif;
+
+set_progress(0.90);
+
+# FINISH
+# ------
+ui_print(" ");
+ui_print("@Unmounting Partitions");
+ifelse(is_mounted("/system"), unmount("/system"));
+ifelse(is_mounted("/data"), unmount("/data"));
+
+ui_print(" ");
+ui_print("@Installation Complete");
+
+set_progress(1);
+
