@@ -36,5 +36,9 @@ echo 'temporary none' > /sys/class/scsi_disk/$i/cache_type
 fi
 done
 
+# PWMFix
+# 0 = Disabled, 1 = Enabled
+echo "0" > /sys/class/lcd/panel/smart_on
+
 # Advanced Mods
 
