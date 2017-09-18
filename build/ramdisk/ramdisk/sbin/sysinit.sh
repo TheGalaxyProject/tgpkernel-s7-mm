@@ -40,5 +40,9 @@ done
 # 0 = Disabled, 1 = Enabled
 echo "0" > /sys/class/lcd/panel/smart_on
 
+# SELinux Permissive / Enforcing Patch
+# 0 = Permissive, 1 = Enforcing
+echo "0" > /sys/fs/selinux/enforce
+
 # Advanced Mods
 
