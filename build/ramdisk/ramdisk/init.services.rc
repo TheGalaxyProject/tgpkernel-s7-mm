@@ -1,0 +1,34 @@
+# Copyright (C) 2012 The Android Open Source Project
+#
+# IMPORTANT: Do not create world writable files or directories.
+# This is a common source of Android security bugs.
+#
+
+on boot
+     exec u:r:su:s0 root root — /sbin/kernelinit.sh
+
+on property:sys.boot_completed=1
+    exec u:r:su:s0 root root — /sbin/sysinit.sh
+    exec u:r:su:s0 root root — /sbin/wakelock.sh
+    start sysinit
+    start wakelock
+
+service kernelinit /sbin/kernelinit.sh
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+    
+service sysinit /sbin/sysinit.sh
+    class late_start
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
+
+service wakelock /sbin/wakelock.sh
+    class late_start
+    user root
+    seclabel u:r:init:s0
+    oneshot
+    disabled
