@@ -29,6 +29,10 @@ $BB mount -o remount,rw /system;
 $BB mount -o remount,rw /data;
 $BB mount -o remount,rw /;
 
+# Set KNOX to 0x0 on running /system
+/sbin/resetprop -n ro.boot.warranty_bit "0"
+/sbin/resetprop -n ro.warranty_bit "0"
+
 # Unmount
 $BB mount -t rootfs -o remount,rw rootfs;
 $BB mount -o remount,ro /system;
