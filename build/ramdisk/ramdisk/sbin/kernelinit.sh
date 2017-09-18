@@ -44,6 +44,28 @@ $BB mount -o remount,rw /;
 /sbin/resetprop -n ro.boot.fmp_config "1"
 /sbin/resetprop -n sys.oem_unlock_allowed "0"
 
+# MTweaks: Make internal storage directory
+MTWEAKS_PATH=/data/.mtweaks
+if [ ! -d $MTWEAKS_PATH ]; then
+	$BB mkdir $MTWEAKS_PATH;
+fi;
+$BB chmod 0777 $MTWEAKS_PATH;
+$BB chown 0.0 $MTWEAKS_PATH;
+
+# MTweaks: Delete backup directory
+$BB rm -rf $MTWEAKS_PATH/bk;
+
+# MTweaks: Make backup directory.
+$BB mkdir $MTWEAKS_PATH/bk;
+$BB chmod 0777 $MTWEAKS_PATH/bk;
+$BB chown 0.0 $MTWEAKS_PATH/bk;
+
+# MTweaks: Save original voltages
+$BB cat /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster1_volt_table > $MTWEAKS_PATH/bk/cpuCl1_stock_voltage
+$BB cat /sys/devices/system/cpu/cpufreq/mp-cpufreq/cluster0_volt_table > $MTWEAKS_PATH/bk/cpuCl0_stock_voltage
+$BB cat /sys/devices/14ac0000.mali/volt_table > $MTWEAKS_PATH/bk/gpu_stock_voltage
+$BB chmod -R 755 $MTWEAKS_PATH/bk/*;
+
 # Unmount
 $BB mount -t rootfs -o remount,rw rootfs;
 $BB mount -o remount,ro /system;
