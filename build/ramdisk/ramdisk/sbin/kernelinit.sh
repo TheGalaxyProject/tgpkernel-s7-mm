@@ -39,6 +39,11 @@ $BB mount -o remount,rw /;
 /sbin/resetprop -n ro.boot.flash.locked "1"
 /sbin/resetprop -n ro.boot.ddrinfo "00000001"
 
+# Fix Samsung Related Flags
+/sbin/resetprop -n ro.fmp_config "1"
+/sbin/resetprop -n ro.boot.fmp_config "1"
+/sbin/resetprop -n sys.oem_unlock_allowed "0"
+
 # Unmount
 $BB mount -t rootfs -o remount,rw rootfs;
 $BB mount -o remount,ro /system;
